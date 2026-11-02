@@ -1,0 +1,7 @@
+export enum EstadoIncidente {
+  PENDIENTE = 'PENDIENTE',
+  DESPACHADO = 'DESPACHADO',
+  EN_COMBATE = 'EN_COMBATE',
+  CONTROLADO = 'CONTROLADO',
+  CERRADO = 'CERRADO',
+}
