@@ -1,6 +1,6 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { IReporteRepository } from '../../domain/repositories/reporte.repository.interface';
+import { DynamoDbReporteRepository } from '../persistence/dynamodb/dynamodb-reporte.repository';
 import { JwtCookieAuthGuard } from '../security/guards/jwt-cookie-auth.guard';
 import { RolesGuard } from '../security/guards/roles.guard';
 import { Roles } from '../security/decorators/roles.decorator';
@@ -11,7 +11,7 @@ import { RolUsuario } from '../../domain/value-objects/rol-usuario.vo';
 @UseGuards(JwtCookieAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class ReportesController {
-  constructor(private readonly reporteRepo: IReporteRepository) {}
+  constructor(private readonly reporteRepo: DynamoDbReporteRepository) {}
 
   @Get()
   @Roles(RolUsuario.OPERADOR, RolUsuario.ADMINISTRADOR)

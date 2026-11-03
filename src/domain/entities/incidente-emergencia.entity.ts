@@ -46,14 +46,24 @@ export class IncidenteEmergencia {
     return this._updatedAt;
   }
 
-  public despachar(camionId: string): void {
+  public validarDespacho(camionId: string): void {
     if (this._estado === EstadoIncidente.CONTROLADO || this._estado === EstadoIncidente.CERRADO) {
       throw new EstadoInvalidoException(
         `No se puede despachar la unidad '${camionId}'. El incidente '${this.id}' se encuentra en estado '${this._estado}'.`,
       );
     }
+  }
+
+  public despachar(camionId: string): void {
+    this.validarDespacho(camionId);
     this._estado = EstadoIncidente.DESPACHADO;
     this._unidadesAsignadas += 1;
+    this._updatedAt = new Date().toISOString();
+  }
+
+  public restaurarEstado(estadoPrevio: EstadoIncidente, unidadesPrevias: number): void {
+    this._estado = estadoPrevio;
+    this._unidadesAsignadas = unidadesPrevias;
     this._updatedAt = new Date().toISOString();
   }
 

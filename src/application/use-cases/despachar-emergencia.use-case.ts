@@ -55,9 +55,12 @@ export class DespacharEmergenciaUseCase {
       throw new IncidenteNoEncontradoException(dto.incidenteId);
     }
 
+    const estadoPrevio = incidente.estado;
+    const unidadesPrevias = incidente.unidadesAsignadas;
     const camionTentativo = dto.camionId || 'AUTO_ASIGNACION';
-    // Aplica lógica de la entidad pura (lanzará EstadoInvalidoException si ya está controlado o cerrado)
-    incidente.despachar(camionTentativo);
+
+    // Valida que el incidente pueda ser despachado (lanzará EstadoInvalidoException si ya está controlado o cerrado)
+    incidente.validarDespacho(camionTentativo);
 
     await this.sagaLogRepo.registrarPaso({
       sagaId,
@@ -76,7 +79,7 @@ export class DespacharEmergenciaUseCase {
     );
 
     if (!flotasRes.exito) {
-      incidente.revertirDespacho();
+      incidente.restaurarEstado(estadoPrevio, unidadesPrevias);
       await this.sagaLogRepo.registrarPaso({
         sagaId,
         timestamp: Date.now(),
@@ -125,8 +128,8 @@ export class DespacharEmergenciaUseCase {
       // Acción Compensatoria 1: Liberar el camión en MS-02
       await this.flotasClient.liberarCamion(incidente.id, flotasRes.camionId);
 
-      // Acción Compensatoria 2: Revertir estado del incidente
-      incidente.revertirDespacho();
+      // Acción Compensatoria 2: Asegurar que el estado del incidente permanezca intacto
+      incidente.restaurarEstado(estadoPrevio, unidadesPrevias);
       await this.incidenteRepo.guardar(incidente);
 
       await this.sagaLogRepo.registrarPaso({
@@ -149,7 +152,8 @@ export class DespacharEmergenciaUseCase {
       };
     }
 
-    // 5. CAMINO FELIZ (Transacciones locales consolidadas)
+    // 5. CAMINO FELIZ (Transacciones locales consolidadas tras éxito en Flotas e Inventario)
+    incidente.despachar(flotasRes.camionId);
     await this.incidenteRepo.guardar(incidente);
 
     const despachoId = `desp_${uuidv7()}`;
@@ -174,6 +178,7 @@ export class DespacharEmergenciaUseCase {
       incidente.estado,
       operadorId,
       `Unidad '${flotasRes.camionId}' despachada hacia la escena con tiempo estimado de ${flotasRes.tiempoLlegadaMinutos} minutos.`,
+      estadoPrevio,
     );
     await this.historialRepo.guardar(novedadHistorial);
 

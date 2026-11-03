@@ -13,7 +13,7 @@ import {
 import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import { DespacharEmergenciaUseCase } from '../../application/use-cases/despachar-emergencia.use-case';
-import { ISagaLogRepository } from '../../domain/repositories/saga-log.repository.interface';
+import { DynamoDbSagaLogRepository } from '../persistence/dynamodb/dynamodb-saga-log.repository';
 import { IniciarDespachoDto } from '../../application/dtos/despacho/iniciar-despacho.dto';
 import { ResultadoDespachoDto } from '../../application/dtos/despacho/resultado-despacho.dto';
 import { JwtCookieAuthGuard } from '../security/guards/jwt-cookie-auth.guard';
@@ -29,7 +29,7 @@ import { RolUsuario } from '../../domain/value-objects/rol-usuario.vo';
 export class DespachoController {
   constructor(
     private readonly despacharEmergenciaUseCase: DespacharEmergenciaUseCase,
-    private readonly sagaLogRepo: ISagaLogRepository,
+    private readonly sagaLogRepo: DynamoDbSagaLogRepository,
   ) {}
 
   @Post('iniciar')

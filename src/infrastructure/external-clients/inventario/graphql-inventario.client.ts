@@ -19,9 +19,9 @@ export class GraphqlInventarioClient implements IInventarioClientPort {
   ): Promise<ReservaInsumosResponse> {
     const mutation = `
       mutation ReservarKitParaDespacho(
-        $incidenteId: String!
+        $incidenteId: ID!
         $camionId: String!
-        $litrosEspumogeno: Float
+        $litrosEspumogeno: Float!
       ) {
         reservarKitParaDespacho(
           incidenteId: $incidenteId
@@ -32,6 +32,7 @@ export class GraphqlInventarioClient implements IInventarioClientPort {
           transaccionId
           materialesReservados
           mensaje
+          codigoError
         }
       }
     `;
@@ -64,11 +65,14 @@ export class GraphqlInventarioClient implements IInventarioClientPort {
       }
 
       const resData = body.data?.reservarKitParaDespacho;
+      const materialesStr = Array.isArray(resData?.materialesReservados)
+        ? resData.materialesReservados.join(', ')
+        : (resData?.materialesReservados || undefined);
       return {
         exito: resData?.exito || false,
         transaccionId: resData?.transaccionId,
-        materialesReservados: resData?.materialesReservados,
-        error: resData?.exito ? undefined : resData?.mensaje,
+        materialesReservados: materialesStr,
+        error: resData?.exito ? undefined : (resData?.mensaje || resData?.codigoError),
       };
     } catch (err: any) {
       this.logger.error(`Fallo de conexión hacia GraphQL MS-03 Inventario: ${err.message}`);

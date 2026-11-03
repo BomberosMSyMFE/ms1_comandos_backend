@@ -1,7 +1,6 @@
 # MS-01: Comandos y Despacho Táctico
 ## Plataforma Distribuida Cuerpo de Bomberos 
 > **Líder / Responsable:** Nataly Martínez  
-> **Semestre:** 2/2026 — UAGRM  
 > **Tecnología:** Node.js 20+ / TypeScript con NestJS 11+  
 > **Base de Datos:** Amazon DynamoDB (Desarrollo local con `amazon/dynamodb-local`)  
 > **Patrón Arquitectónico:** Clean Architecture (Capa de Dominio desacoplada al 100%)  
@@ -51,10 +50,11 @@ El microservicio se diseñó siguiendo una separación estricta de responsabilid
 
 ## 2. Roles del Sistema
 
-En cumplimiento estricto con el modelo operativo del Centro de Comandos de Bomberos:
-* **`OPERADOR`**: Comandante de Guardia o despachador en la Sala de Crisis central. Autoriza despachos tácticos, monitorea siniestros activos y administra alertas críticas.
-* **`BOMBERO`**: Conductor o personal de cuadrilla en las unidades cisterna en escena. Reporta novedades en combate y actualiza el nivel de agua de la cisterna.
-* **`ADMINISTRADOR`**: Administrador del sistema y auditoría de la plataforma.
+| Rol | Email | Contraseña | Descripción |
+|---|---|---|---|
+| **`OPERADOR`** | `nataly.comandos@bomberos.gob.bo` | `Comandos2026!` | Despachador en Sala de Crisis (Acceso a Despacho SAGA, CRUD Incidentes, Reportes) |
+| **`BOMBERO`** | `bombero.b04@bomberos.gob.bo` | `Bombero2026!` | Cuadrilla de Cisterna (Consulta de Incidentes y cambio de estado en escena) |
+| **`ADMINISTRADOR`** | `admin@bomberos.gob.bo` | `AdminSeguro2026!` | Auditoría global y administración de plataforma |
 
 > *Nota operativa:* Los ciudadanos interactúan exclusivamente vía WhatsApp con el bot n8n / webhook externo; no poseen cuentas directas ni credenciales en este microservicio.
 

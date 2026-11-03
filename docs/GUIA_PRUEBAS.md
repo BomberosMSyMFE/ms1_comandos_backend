@@ -202,6 +202,7 @@ Este caso demuestra la robustez del Patrón SAGA de Nataly:
 
 * **Endpoint:** `POST /api/v1/despacho/iniciar`
 * **Etiqueta Swagger:** `Despacho Táctico (SAGA)`
+* **Nota Operativa:** Para probar la reversión a `PENDIENTE`, utiliza el ID del incidente creado en el **Caso de Prueba 4** (o un incidente recién registrado en estado `PENDIENTE`). Si se usa un incidente que ya fue despachado previamente, el rollback restaurará su estado previo.
 * **Cuerpo de la Petición (JSON):**
 ```json
 {
