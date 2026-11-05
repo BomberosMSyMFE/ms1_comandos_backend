@@ -114,8 +114,12 @@ describe('DespacharEmergenciaUseCase (Patrón SAGA Orquestado)', () => {
     // Comprobamos que el resultado refleja la compensación
     expect(resultado.status).toBe('COMPENSACION_EJECUTADA');
     expect(resultado.codigoError).toBe('STOCK_INSUFICIENTE_INVENTARIO');
-    // COMPENSACIÓN: Se debe llamar a liberarCamion para revertir la reserva en MS-02
-    expect(mockFlotasClient.liberarCamion).toHaveBeenCalledWith('inc-001', 'CAM-B04');
+    // COMPENSACIÓN: Se debe llamar a liberarCamion para revertir la reserva en MS-02 con motivo tipado
+    expect(mockFlotasClient.liberarCamion).toHaveBeenCalledWith(
+      'inc-001',
+      'CAM-B04',
+      expect.stringContaining('INVENTARIO_RECHAZO'),
+    );
     // El incidente no debe quedar despachado, debe revertirse a PENDIENTE
     expect(resultado.incidenteEstado).toBe(EstadoIncidente.PENDIENTE);
   });

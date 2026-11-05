@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IFlotasClientPort, ReservaCamionResponse } from '../../../application/ports/flotas-client.port';
+import {
+  IFlotasClientPort,
+  OpcionesReservaCamion,
+  ReservaCamionResponse,
+} from '../../../application/ports/flotas-client.port';
 
 @Injectable()
 export class MockFlotasClient implements IFlotasClientPort {
@@ -8,8 +12,9 @@ export class MockFlotasClient implements IFlotasClientPort {
   async reservarCamion(
     incidenteId: string,
     tipoFuego: string,
-    camionId?: string,
+    opciones?: OpcionesReservaCamion | string,
   ): Promise<ReservaCamionResponse> {
+    const camionId = typeof opciones === 'string' ? opciones : opciones?.camionId;
     this.logger.log(
       `[MOCK MS-02 FLOTAS] Solicitando reserva para incidente '${incidenteId}', tipo '${tipoFuego}', camión '${camionId || 'AUTO'}'.`,
     );
@@ -24,18 +29,28 @@ export class MockFlotasClient implements IFlotasClientPort {
       };
     }
 
-    const unidadAsignada = camionId || 'CAM-B04';
+    const unidadAsignada = camionId || 'B-04';
     return {
       exito: true,
       camionId: unidadAsignada,
-      tiempoLlegadaMinutos: 6.5,
+      reservaId: 'RES-MOCK-9912',
+      placa: '3482-LKP',
+      tipoUnidad: 'CISTERNA_PESADA',
+      capacidadAguaLts: 10000,
+      tiempoLlegadaMinutos: 5.4,
+      distanciaKms: 3.2,
+      estacionOrigen: 'Estación Norte - Pampa de la Isla',
     };
   }
 
-  async liberarCamion(incidenteId: string, camionId: string): Promise<{ exito: boolean }> {
+  async liberarCamion(
+    incidenteId: string,
+    camionId: string,
+    motivoCompensacion?: string,
+  ): Promise<{ exito: boolean; mensaje?: string }> {
     this.logger.warn(
-      `[MOCK MS-02 FLOTAS] Acción Compensatoria SAGA: Liberando camión '${camionId}' del incidente '${incidenteId}'.`,
+      `[MOCK MS-02 FLOTAS] Acción Compensatoria SAGA: Liberando camión '${camionId}' del incidente '${incidenteId}' (Motivo: ${motivoCompensacion || 'COMPENSACION_SAGA'}).`,
     );
-    return { exito: true };
+    return { exito: true, mensaje: 'Reserva revertida exitosamente en mock.' };
   }
 }

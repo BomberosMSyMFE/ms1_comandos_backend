@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IFlotasClientPort, ReservaCamionResponse } from '../../../application/ports/flotas-client.port';
+import {
+  IFlotasClientPort,
+  OpcionesReservaCamion,
+  ReservaCamionResponse,
+} from '../../../application/ports/flotas-client.port';
 import { EnvConfig } from '../../config/env.config';
 
 @Injectable()
@@ -7,56 +11,129 @@ export class HttpFlotasClient implements IFlotasClientPort {
   private readonly logger = new Logger(HttpFlotasClient.name);
   private readonly baseUrl = EnvConfig.ms02FlotasUrl;
 
+  private normalizarTipoFuego(tipo: string): string {
+    const t = tipo.toUpperCase();
+    if (t.includes('QUIM') || t.includes('HAZMAT')) return 'INDUSTRIAL_QUIMICO';
+    if (t.includes('ESTRUCT')) return 'URBANO_ESTRUCTURAL';
+    if (t.includes('FOREST')) return 'FORESTAL';
+    if (t.includes('VEHIC')) return 'VEHICULAR';
+    if (t.includes('ELEC')) return 'ELECTRICO';
+    if (t.includes('INDUS')) return 'INDUSTRIAL';
+    return 'URBANO_ESTRUCTURAL';
+  }
+
   async reservarCamion(
     incidenteId: string,
     tipoFuego: string,
-    camionId?: string,
+    opciones?: OpcionesReservaCamion | string,
   ): Promise<ReservaCamionResponse> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/v1/flotas/reservar-camion`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ incidenteId, tipoFuego, camionId }),
-      });
+    const camionId = typeof opciones === 'string' ? opciones : opciones?.camionId;
+    const latitud = typeof opciones === 'object' ? opciones.latitud : undefined;
+    const longitud = typeof opciones === 'object' ? opciones.longitud : undefined;
+    const litrosMinimos = typeof opciones === 'object' ? opciones.litrosMinimos : undefined;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        return {
-          exito: false,
-          camionId: '',
-          tiempoLlegadaMinutos: 0,
-          error: `Error HTTP ${response.status} en MS-02 Flotas: ${errorText}`,
-        };
-      }
+    const payload = {
+      incidenteId,
+      tipoFuego: this.normalizarTipoFuego(tipoFuego),
+      ...(camionId && camionId !== 'AUTO_ASIGNACION' ? { camionId } : {}),
+      latitud: latitud ?? -17.7833,
+      longitud: longitud ?? -63.1821,
+      litrosMinimos: litrosMinimos ?? 3000,
+    };
 
-      const data = await response.json();
-      return {
-        exito: true,
-        camionId: data.camionId || camionId || 'CAM-B04',
-        tiempoLlegadaMinutos: data.tiempoLlegadaMinutos || 7.0,
-      };
-    } catch (err: any) {
-      this.logger.error(`Fallo de conexión hacia MS-02 Flotas: ${err.message}`);
-      return {
-        exito: false,
-        camionId: '',
-        tiempoLlegadaMinutos: 0,
-        error: `Fallo de conexión en red hacia MS-02: ${err.message}`,
-      };
+    const urls = [this.baseUrl];
+    if (this.baseUrl.includes(':8080')) {
+      urls.push(this.baseUrl.replace(':8080', ':8082'));
+    } else if (this.baseUrl.includes(':8082')) {
+      urls.push(this.baseUrl.replace(':8082', ':8080'));
     }
+
+    let lastError = '';
+
+    for (const targetUrl of urls) {
+      try {
+        const response = await fetch(`${targetUrl}/api/v1/flotas/reservar-camion`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => null);
+          const errorMsg = errorBody?.mensaje || `Error HTTP ${response.status} en MS-02 Flotas`;
+          return {
+            exito: false,
+            camionId: '',
+            tiempoLlegadaMinutos: 0,
+            error: errorMsg,
+          };
+        }
+
+        const data = await response.json();
+        return {
+          exito: true,
+          camionId: data.camionId || camionId || 'B-04',
+          reservaId: data.reservaId,
+          placa: data.placa,
+          tipoUnidad: data.tipoUnidad,
+          capacidadAguaLts: data.capacidadAguaLts,
+          distanciaKms: data.distanciaKms,
+          estacionOrigen: data.estacionOrigen,
+          tiempoLlegadaMinutos: data.tiempoLlegadaMinutos || data.tiempoEstimadoLlegadaMinutos || 5.4,
+        };
+      } catch (err: any) {
+        lastError = err.message;
+        this.logger.debug(`Intento fallido contra ${targetUrl}: ${err.message}`);
+      }
+    }
+
+    this.logger.error(`Fallo de conexión hacia MS-02 Flotas en todas las rutas: ${lastError}`);
+    return {
+      exito: false,
+      camionId: '',
+      tiempoLlegadaMinutos: 0,
+      error: `Fallo de conexión en red hacia MS-02: ${lastError}`,
+    };
   }
 
-  async liberarCamion(incidenteId: string, camionId: string): Promise<{ exito: boolean }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/v1/flotas/liberar-camion`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ incidenteId, camionId }),
-      });
-      return { exito: response.ok };
-    } catch (err: any) {
-      this.logger.error(`Fallo al solicitar liberación de camión en MS-02: ${err.message}`);
-      return { exito: false };
+  async liberarCamion(
+    incidenteId: string,
+    camionId: string,
+    motivoCompensacion?: string,
+  ): Promise<{ exito: boolean; mensaje?: string }> {
+    const payload = {
+      incidenteId,
+      camionId,
+      motivoCompensacion: motivoCompensacion || 'INVENTARIO_RECHAZO_FALTA_STOCK',
+    };
+
+    const urls = [this.baseUrl];
+    if (this.baseUrl.includes(':8080')) {
+      urls.push(this.baseUrl.replace(':8080', ':8082'));
+    } else if (this.baseUrl.includes(':8082')) {
+      urls.push(this.baseUrl.replace(':8082', ':8080'));
     }
+
+    for (const targetUrl of urls) {
+      try {
+        const response = await fetch(`${targetUrl}/api/v1/flotas/liberar-camion`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          const data = await response.json().catch(() => ({}));
+          return {
+            exito: true,
+            mensaje: data.mensaje || 'Unidad liberada con éxito por compensación SAGA.',
+          };
+        }
+      } catch (err: any) {
+        this.logger.warn(`Fallo al compensar en ${targetUrl}: ${err.message}`);
+      }
+    }
+
+    return { exito: false, mensaje: 'No se pudo contactar a MS-02 para la liberación compensatoria.' };
   }
 }

@@ -75,7 +75,12 @@ export class DespacharEmergenciaUseCase {
     const flotasRes = await this.flotasClient.reservarCamion(
       incidente.id,
       incidente.tipoIncidente,
-      dto.camionId,
+      {
+        camionId: dto.camionId,
+        latitud: incidente.ubicacion?.latitud,
+        longitud: incidente.ubicacion?.longitud,
+        litrosMinimos: incidente.severidad === 'CRITICA' ? 8000 : 3000,
+      },
     );
 
     if (!flotasRes.exito) {
@@ -125,8 +130,12 @@ export class DespacharEmergenciaUseCase {
 
     // Si Inventario falla -> DISPARAR ROLLBACK COMPENSATORIO HACIA FLOTAS
     if (!inventarioRes.exito) {
-      // Acción Compensatoria 1: Liberar el camión en MS-02
-      await this.flotasClient.liberarCamion(incidente.id, flotasRes.camionId);
+      // Acción Compensatoria 1: Liberar el camión en MS-02 con motivo tipado
+      await this.flotasClient.liberarCamion(
+        incidente.id,
+        flotasRes.camionId,
+        `INVENTARIO_RECHAZO_${inventarioRes.error || 'FALTA_STOCK'}`,
+      );
 
       // Acción Compensatoria 2: Asegurar que el estado del incidente permanezca intacto
       incidente.restaurarEstado(estadoPrevio, unidadesPrevias);
