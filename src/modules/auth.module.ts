@@ -31,8 +31,9 @@ import { EnvConfig } from '../infrastructure/config/env.config';
         usuarioRepo: DynamoDbUsuarioRepository,
         tokenService: JwtTokenService,
         passwordHasher: BcryptPasswordHasher,
-      ) => new LoginSsoUseCase(usuarioRepo, tokenService, passwordHasher),
-      inject: [DynamoDbUsuarioRepository, JwtTokenService, BcryptPasswordHasher],
+        logger: any,
+      ) => new LoginSsoUseCase(usuarioRepo, tokenService, passwordHasher, logger),
+      inject: [DynamoDbUsuarioRepository, JwtTokenService, BcryptPasswordHasher, 'IAppLoggerPort'],
     },
     {
       provide: ValidarSesionUseCase,

@@ -6,6 +6,7 @@ import { ISagaLogRepository } from '../../domain/repositories/saga-log.repositor
 import { IFlotasClientPort } from '../ports/flotas-client.port';
 import { IInventarioClientPort } from '../ports/inventario-client.port';
 import { IEventNotifierPort } from '../ports/event-notifier.port';
+import { IAppLoggerPort } from '../ports/logger.port';
 import { IniciarDespachoDto } from '../dtos/despacho/iniciar-despacho.dto';
 import { ResultadoDespachoDto } from '../dtos/despacho/resultado-despacho.dto';
 import { IncidenteNoEncontradoException } from '../../domain/exceptions/incidente-no-encontrado.exception';
@@ -21,6 +22,7 @@ export class DespacharEmergenciaUseCase {
     private readonly flotasClient: IFlotasClientPort,
     private readonly inventarioClient: IInventarioClientPort,
     private readonly eventNotifier: IEventNotifierPort,
+    private readonly logger?: IAppLoggerPort,
   ) {}
 
   async execute(
@@ -30,10 +32,21 @@ export class DespacharEmergenciaUseCase {
   ): Promise<ResultadoDespachoDto> {
     const sagaId = `saga_${uuidv7()}`;
 
+    this.logger?.log(
+      'SAGA-ORCHESTRATOR',
+      `[INICIO] Despacho táctico iniciado | SagaId: ${sagaId} | Incidente: ${dto.incidenteId} | Operador: ${operadorId} | IdempotencyKey: ${idempotencyKey || 'NINGUNA'}`,
+      { sagaId, incidenteId: dto.incidenteId, operadorId, idempotencyKey },
+    );
+
     // 1. Verificación de Idempotencia para evitar dobles despachos
     if (idempotencyKey) {
       const previo = await this.sagaLogRepo.buscarPorIdempotencyKey(idempotencyKey);
       if (previo && previo.estadoSaga === 'COMPLETADA') {
+        this.logger?.log(
+          'SAGA-ORCHESTRATOR',
+          `[IDEMPOTENCIA] Petición duplicada identificada con key '${idempotencyKey}'. Retornando resultado ya consolidado.`,
+          { sagaId: previo.sagaId, idempotencyKey },
+        );
         return {
           status: 'EXITO',
           sagaId: previo.sagaId,
@@ -52,6 +65,12 @@ export class DespacharEmergenciaUseCase {
     // 2. Cargar Incidente y validar reglas puras del Dominio
     const incidente = await this.incidenteRepo.buscarPorId(dto.incidenteId);
     if (!incidente) {
+      this.logger?.error(
+        'SAGA-ORCHESTRATOR',
+        `[PASO_0_ERROR] Incidente '${dto.incidenteId}' no encontrado en DynamoDB.`,
+        undefined,
+        { sagaId, incidenteId: dto.incidenteId },
+      );
       throw new IncidenteNoEncontradoException(dto.incidenteId);
     }
 
@@ -61,6 +80,12 @@ export class DespacharEmergenciaUseCase {
 
     // Valida que el incidente pueda ser despachado (lanzará EstadoInvalidoException si ya está controlado o cerrado)
     incidente.validarDespacho(camionTentativo);
+
+    this.logger?.log(
+      'SAGA-ORCHESTRATOR',
+      `[PASO_0_DOMINIO] Invariantes de dominio aprobadas para incidente '${incidente.id}' | Código: ${incidente.codigoRadial} | Estado: ${incidente.estado} | Severidad: ${incidente.severidad}`,
+      { sagaId, incidenteId: incidente.id, severidad: incidente.severidad },
+    );
 
     await this.sagaLogRepo.registrarPaso({
       sagaId,
@@ -72,6 +97,12 @@ export class DespacharEmergenciaUseCase {
     });
 
     // 3. PASO 1 SAGA: Reservar Camión en MS-02 Flotas (Spring Boot / PostGIS)
+    this.logger?.log(
+      'SAGA-ORCHESTRATOR',
+      `[PASO_1_FLOTAS] Solicitando reserva de unidad a MS-02 Flotas... | Camión solicitado: ${dto.camionId || 'AUTO_ASIGNACION'}`,
+      { sagaId, incidenteId: incidente.id, camionId: dto.camionId },
+    );
+
     const flotasRes = await this.flotasClient.reservarCamion(
       incidente.id,
       incidente.tipoIncidente,
@@ -85,6 +116,12 @@ export class DespacharEmergenciaUseCase {
 
     if (!flotasRes.exito) {
       incidente.restaurarEstado(estadoPrevio, unidadesPrevias);
+      this.logger?.warn(
+        'SAGA-ORCHESTRATOR',
+        `[PASO_1_FALLO] MS-02 Flotas no pudo reservar unidad: ${flotasRes.error || 'Sin disponibilidad'}`,
+        { sagaId, incidenteId: incidente.id, error: flotasRes.error },
+      );
+
       await this.sagaLogRepo.registrarPaso({
         sagaId,
         timestamp: Date.now(),
@@ -104,6 +141,12 @@ export class DespacharEmergenciaUseCase {
       };
     }
 
+    this.logger?.log(
+      'SAGA-ORCHESTRATOR',
+      `[PASO_1_OK] Unidad asignada con éxito por MS-02 Flotas: '${flotasRes.camionId}' | ETA: ${flotasRes.tiempoLlegadaMinutos} min | Distancia: ${flotasRes.distanciaKms || 'N/D'} km`,
+      { sagaId, camionId: flotasRes.camionId, etaMinutos: flotasRes.tiempoLlegadaMinutos },
+    );
+
     await this.sagaLogRepo.registrarPaso({
       sagaId,
       timestamp: Date.now(),
@@ -121,6 +164,12 @@ export class DespacharEmergenciaUseCase {
     );
     const litrosEspuma = itemEspuma ? itemEspuma.cantidad : 250.0;
 
+    this.logger?.log(
+      'SAGA-ORCHESTRATOR',
+      `[PASO_2_INVENTARIO] Solicitando reserva de insumos a MS-03 Inventario... | Insumos: ${insumosAAsignar.length} ítems | Espumógeno: ${litrosEspuma} L`,
+      { sagaId, camionId: flotasRes.camionId, itemsCount: insumosAAsignar.length, litrosEspuma },
+    );
+
     const inventarioRes = await this.inventarioClient.reservarInsumos(
       incidente.id,
       flotasRes.camionId,
@@ -130,6 +179,12 @@ export class DespacharEmergenciaUseCase {
 
     // Si Inventario falla -> DISPARAR ROLLBACK COMPENSATORIO HACIA FLOTAS
     if (!inventarioRes.exito) {
+      this.logger?.warn(
+        'SAGA-ORCHESTRATOR',
+        `[PASO_2_FALLO] MS-03 Inventario rechazó reserva: ${inventarioRes.error || 'Stock insuficiente'}. INICIANDO ROLLBACK COMPENSATORIO HACIA MS-02 FLOTAS.`,
+        { sagaId, error: inventarioRes.error, camionARevertir: flotasRes.camionId },
+      );
+
       // Acción Compensatoria 1: Liberar el camión en MS-02 con motivo tipado
       await this.flotasClient.liberarCamion(
         incidente.id,
@@ -140,6 +195,12 @@ export class DespacharEmergenciaUseCase {
       // Acción Compensatoria 2: Asegurar que el estado del incidente permanezca intacto
       incidente.restaurarEstado(estadoPrevio, unidadesPrevias);
       await this.incidenteRepo.guardar(incidente);
+
+      this.logger?.warn(
+        'SAGA-ORCHESTRATOR',
+        `[ROLLBACK_COMPENSADO] Unidad '${flotasRes.camionId}' liberada en MS-02 Flotas. Estado de incidente '${incidente.id}' restaurado a '${estadoPrevio}'.`,
+        { sagaId, incidenteId: incidente.id, camionLiberado: flotasRes.camionId, estadoRestaurado: incidente.estado },
+      );
 
       await this.sagaLogRepo.registrarPaso({
         sagaId,
@@ -160,6 +221,12 @@ export class DespacharEmergenciaUseCase {
         incidenteEstado: incidente.estado,
       };
     }
+
+    this.logger?.log(
+      'SAGA-ORCHESTRATOR',
+      `[PASO_2_OK] Insumos reservados exitosamente en MS-03 Inventario (Tx: ${inventarioRes.transaccionId || 'TX-OK'}). Consolidando transacciones locales...`,
+      { sagaId, transaccionId: inventarioRes.transaccionId },
+    );
 
     // 5. CAMINO FELIZ (Transacciones locales consolidadas tras éxito en Flotas e Inventario)
     incidente.despachar(flotasRes.camionId);
@@ -215,6 +282,12 @@ export class DespacharEmergenciaUseCase {
       sagaId,
       operadorId,
     });
+
+    this.logger?.log(
+      'SAGA-ORCHESTRATOR',
+      `[COMPLETADA] SAGA finalizada con éxito. Incidente: ${incidente.id} -> ${incidente.estado} | Unidad: ${flotasRes.camionId} | Despacho: ${despachoId}. Sala de Crisis notificada.`,
+      { sagaId, despachoId, camionId: flotasRes.camionId, estado: incidente.estado },
+    );
 
     return {
       status: 'EXITO',

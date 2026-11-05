@@ -21,6 +21,7 @@ import { RolesGuard } from '../security/guards/roles.guard';
 import { Roles } from '../security/decorators/roles.decorator';
 import { CurrentUser } from '../security/decorators/current-user.decorator';
 import { RolUsuario } from '../../domain/value-objects/rol-usuario.vo';
+import { TacticalLoggerService } from '../logging/tactical-logger.service';
 
 @ApiTags('Incidentes & Alertas')
 @Controller('api/v1/incidentes')
@@ -33,6 +34,7 @@ export class IncidentesController {
     private readonly listarIncidentesActivosUseCase: ListarIncidentesActivosUseCase,
     private readonly obtenerTimelineIncidenteUseCase: ObtenerTimelineIncidenteUseCase,
     private readonly obtenerDespachosIncidenteUseCase: ObtenerDespachosIncidenteUseCase,
+    private readonly logger: TacticalLoggerService,
   ) {}
 
   @Get('activos')
@@ -93,7 +95,17 @@ export class IncidentesController {
     @Body() dto: CrearIncidenteDto,
     @CurrentUser('id') operadorId: string,
   ) {
+    this.logger.log(
+      'INCIDENTES-CTRL',
+      `[POST /] Registrando nueva alarma de emergencia | Tipo: ${dto.tipoIncidente} | Severidad: ${dto.severidad} | Operador: ${operadorId}`,
+      { tipo: dto.tipoIncidente, severidad: dto.severidad, operadorId },
+    );
     const inc = await this.registrarIncidenteUseCase.execute(dto, operadorId);
+    this.logger.log(
+      'INCIDENTES-CTRL',
+      `[POST / -> 201 CREATED] Incidente registrado exitosamente | ID: ${inc.id} | Código: ${inc.codigoRadial} | Estado: ${inc.estado}`,
+      { id: inc.id, codigoRadial: inc.codigoRadial },
+    );
     return {
       id: inc.id,
       codigoRadial: inc.codigoRadial,
@@ -122,7 +134,17 @@ export class IncidentesController {
     @Body() dto: CambiarEstadoIncidenteDto,
     @CurrentUser('id') operadorId: string,
   ) {
+    this.logger.log(
+      'INCIDENTES-CTRL',
+      `[PATCH /:id/estado] Transición de estado solicitada para incidente '${id}' -> ${dto.nuevoEstado}. Operador: '${operadorId}'.`,
+      { incidenteId: id, nuevoEstado: dto.nuevoEstado, operadorId },
+    );
     const inc = await this.cambiarEstadoIncidenteUseCase.execute(id, dto, operadorId);
+    this.logger.log(
+      'INCIDENTES-CTRL',
+      `[PATCH /:id/estado -> 200 OK] Incidente '${id}' actualizado a estado '${inc.estado}'.`,
+      { incidenteId: id, estado: inc.estado },
+    );
     return {
       id: inc.id,
       codigoRadial: inc.codigoRadial,

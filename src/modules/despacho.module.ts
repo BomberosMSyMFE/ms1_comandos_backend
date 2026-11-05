@@ -40,6 +40,7 @@ import { EnvConfig } from '../infrastructure/config/env.config';
         flotasClient: any,
         invClient: any,
         notifier: SalaCrisisGateway,
+        logger: any,
       ) =>
         new DespacharEmergenciaUseCase(
           incRepo,
@@ -49,6 +50,7 @@ import { EnvConfig } from '../infrastructure/config/env.config';
           flotasClient,
           invClient,
           notifier,
+          logger,
         ),
       inject: [
         DynamoDbIncidenteRepository,
@@ -58,6 +60,7 @@ import { EnvConfig } from '../infrastructure/config/env.config';
         'IFlotasClientPort',
         'IInventarioClientPort',
         SalaCrisisGateway,
+        'IAppLoggerPort',
       ],
     },
   ],
