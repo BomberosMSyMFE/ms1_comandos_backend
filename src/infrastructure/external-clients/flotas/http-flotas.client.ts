@@ -52,6 +52,10 @@ export class HttpFlotasClient implements IFlotasClientPort {
 
     for (const targetUrl of urls) {
       try {
+        this.logger.log(
+          `[TACTICAL-AUDIT MS-02] Conectando a Flotas (Maikol) en: ${targetUrl}/api/v1/flotas/reservar-camion (Payload: ${incidenteId}, ${payload.tipoFuego}, ${camionId || 'AUTO_ASIGNACION'})`,
+        );
+
         const response = await fetch(`${targetUrl}/api/v1/flotas/reservar-camion`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -61,6 +65,9 @@ export class HttpFlotasClient implements IFlotasClientPort {
         if (!response.ok) {
           const errorBody = await response.json().catch(() => null);
           const errorMsg = errorBody?.mensaje || `Error HTTP ${response.status} en MS-02 Flotas`;
+          this.logger.error(
+            `[TACTICAL-AUDIT MS-02 ERROR] Fallo HTTP ${response.status} en ${targetUrl}. Detalle: ${errorMsg}`,
+          );
           return {
             exito: false,
             camionId: '',
@@ -70,24 +77,34 @@ export class HttpFlotasClient implements IFlotasClientPort {
         }
 
         const data = await response.json();
+        const tiempoLlegada = data.tiempoLlegadaMinutos || data.tiempoEstimadoLlegadaMinutos || 5.4;
+        const camionReservado = data.camionId || camionId || 'B-04';
+        this.logger.log(
+          `[TACTICAL-AUDIT MS-02] Respuesta HTTP ${response.status} de Flotas. Camión reservado: ${camionReservado} (Llegada: ${tiempoLlegada} min)`,
+        );
         return {
           exito: true,
-          camionId: data.camionId || camionId || 'B-04',
+          camionId: camionReservado,
           reservaId: data.reservaId,
           placa: data.placa,
           tipoUnidad: data.tipoUnidad,
           capacidadAguaLts: data.capacidadAguaLts,
           distanciaKms: data.distanciaKms,
           estacionOrigen: data.estacionOrigen,
-          tiempoLlegadaMinutos: data.tiempoLlegadaMinutos || data.tiempoEstimadoLlegadaMinutos || 5.4,
+          tiempoLlegadaMinutos: tiempoLlegada,
         };
       } catch (err: any) {
         lastError = err.message;
+        this.logger.error(
+          `[TACTICAL-AUDIT MS-02 ERROR] Fallo HTTP en ${targetUrl}. Detalle: ${err.message}`,
+        );
         this.logger.debug(`Intento fallido contra ${targetUrl}: ${err.message}`);
       }
     }
 
-    this.logger.error(`Fallo de conexión hacia MS-02 Flotas en todas las rutas: ${lastError}`);
+    this.logger.error(
+      `[TACTICAL-AUDIT MS-02 ERROR] Fallo de conexión hacia MS-02 Flotas en todas las rutas: ${lastError}`,
+    );
     return {
       exito: false,
       camionId: '',
@@ -116,6 +133,10 @@ export class HttpFlotasClient implements IFlotasClientPort {
 
     for (const targetUrl of urls) {
       try {
+        this.logger.warn(
+          `[TACTICAL-AUDIT SAGA ROLLBACK MS-02] Solicitando liberación de camión en: ${targetUrl}/api/v1/flotas/liberar-camion...`,
+        );
+
         const response = await fetch(`${targetUrl}/api/v1/flotas/liberar-camion`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -124,12 +145,24 @@ export class HttpFlotasClient implements IFlotasClientPort {
 
         if (response.ok) {
           const data = await response.json().catch(() => ({}));
+          this.logger.log(
+            `[TACTICAL-AUDIT SAGA ROLLBACK MS-02] Camión '${camionId}' liberado con éxito por compensación en ${targetUrl}.`,
+          );
           return {
             exito: true,
             mensaje: data.mensaje || 'Unidad liberada con éxito por compensación SAGA.',
           };
         }
+
+        const errorBody = await response.json().catch(() => null);
+        const errorMsg = errorBody?.mensaje || `Error HTTP ${response.status} en MS-02 Flotas`;
+        this.logger.error(
+          `[TACTICAL-AUDIT MS-02 ERROR] Fallo HTTP ${response.status} en ${targetUrl}. Detalle: ${errorMsg}`,
+        );
       } catch (err: any) {
+        this.logger.error(
+          `[TACTICAL-AUDIT MS-02 ERROR] Fallo al compensar en ${targetUrl}. Detalle: ${err.message}`,
+        );
         this.logger.warn(`Fallo al compensar en ${targetUrl}: ${err.message}`);
       }
     }

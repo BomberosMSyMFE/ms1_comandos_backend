@@ -16,6 +16,9 @@ export class MockFlotasClient implements IFlotasClientPort {
   ): Promise<ReservaCamionResponse> {
     const camionId = typeof opciones === 'string' ? opciones : opciones?.camionId;
     this.logger.log(
+      `[TACTICAL-AUDIT MOCK MS-02] Simulación local de reserva de camión para pruebas autónomas (USE_MOCKS=true).`,
+    );
+    this.logger.log(
       `[MOCK MS-02 FLOTAS] Solicitando reserva para incidente '${incidenteId}', tipo '${tipoFuego}', camión '${camionId || 'AUTO'}'.`,
     );
 

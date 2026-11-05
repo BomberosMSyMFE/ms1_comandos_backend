@@ -17,6 +17,9 @@ export class MockInventarioClient implements IInventarioClientPort {
   ): Promise<ReservaInsumosResponse> {
     const litros = litrosEspumogeno || 250.0;
     this.logger.log(
+      `[TACTICAL-AUDIT MOCK MS-03] Simulación local de reserva de insumos para pruebas autónomas (USE_MOCKS=true).`,
+    );
+    this.logger.log(
       `[MOCK MS-03 INVENTARIO] GraphQL Mutation reservarKitParaDespacho: incidente='${incidenteId}', camion='${camionId}', litros=${litros}.`,
     );
 
