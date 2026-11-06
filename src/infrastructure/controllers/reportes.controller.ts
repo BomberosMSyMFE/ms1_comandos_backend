@@ -14,7 +14,7 @@ export class ReportesController {
   constructor(private readonly reporteRepo: DynamoDbReporteRepository) {}
 
   @Get()
-  @Roles(RolUsuario.OPERADOR, RolUsuario.ADMINISTRADOR)
+  @Roles(RolUsuario.OPERADOR, RolUsuario.BOMBERO, RolUsuario.ADMINISTRADOR)
   @ApiOperation({
     summary: 'Listar Catálogo de Reportes Ejecutivos',
     description: 'Retorna los reportes ejecutivos generados por voz o comando para la Comandancia (CU-07).',
@@ -25,7 +25,7 @@ export class ReportesController {
   }
 
   @Get(':id')
-  @Roles(RolUsuario.OPERADOR, RolUsuario.ADMINISTRADOR)
+  @Roles(RolUsuario.OPERADOR, RolUsuario.BOMBERO, RolUsuario.ADMINISTRADOR)
   @ApiOperation({
     summary: 'Obtener Detalle de un Reporte',
     description: 'Retorna el resumen analítico y los enlaces para descargar PDF, Excel o Audio síntesis.',

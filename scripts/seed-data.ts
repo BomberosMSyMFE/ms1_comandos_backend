@@ -128,12 +128,12 @@ async function seedData() {
   console.log('--- POBLANDO SEEDER MASIVO Y REALISTA PARA MS-01 COMANDOS & DESPACHO ---');
   console.log('========================================================================\n');
 
-  // 1. GENERACIÓN DE HASHES DE CONTRASEÑA
-  console.log('1/5. Generando credenciales seguras con bcrypt...');
+  // 1. GENERACIÓN DE HASHES DE CONTRASEÑA ESPECÍFICOS SEGÚN README
+  console.log('1/5. Generando credenciales seguras con bcrypt según README oficial...');
   const hashAdmin = await bcrypt.hash('AdminSeguro2026!', 10);
-  const hashComandos = await bcrypt.hash('Comandos2026!', 10);
+  const hashNataly = await bcrypt.hash('Comandos2026!', 10);
   const hashOperador = await bcrypt.hash('Operador2026!', 10);
-  const hashBombero = await bcrypt.hash('BomberoSeguro2026!', 10);
+  const hashBombero = await bcrypt.hash('Bombero2026!', 10);
 
   // 2. USUARIOS: 1 Administrador, 5 Operadores, 15 Bomberos (Total: 21)
   console.log('2/5. Construyendo colección de 21 usuarios SSO con teléfonos móviles...');
@@ -155,10 +155,10 @@ async function seedData() {
       usuario_id: 'usr_op_nataly_001',
       nombre_completo: 'Nataly Martínez (Líder Sala de Crisis)',
       email: 'nataly.comandos@bomberos.gob.bo',
-      password_hash: hashComandos,
+      password_hash: hashNataly,
       rol: 'OPERADOR',
       estacion_base: 'Estación Central - Santa Cruz',
-      telefono_movil: '+591 70012345',
+      telefono_movil: '+591 72115304',
       activo: true,
       created_at: new Date(Date.now() - 45 * 24 * 3600 * 1000).toISOString(),
     },
@@ -169,7 +169,7 @@ async function seedData() {
       password_hash: hashOperador,
       rol: 'OPERADOR',
       estacion_base: 'Estación Norte (Pampa de la Isla)',
-      telefono_movil: '+591 70012346',
+      telefono_movil: '+591 60495035',
       activo: true,
       created_at: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(),
     },

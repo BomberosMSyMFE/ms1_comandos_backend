@@ -41,7 +41,7 @@ export class IncidentesController {
   ) {}
 
   @Get('activos')
-  @Roles(RolUsuario.OPERADOR, RolUsuario.BOMBERO, RolUsuario.ADMINISTRADOR)
+  @Roles(RolUsuario.OPERADOR, RolUsuario.ADMINISTRADOR)
   @ApiOperation({
     summary: 'Listar Incidentes Activos',
     description: 'Retorna todas las emergencias que no se encuentren en estado CERRADO para la Sala de Crisis.',
@@ -66,7 +66,7 @@ export class IncidentesController {
   }
 
   @Get('kpis-tacticos')
-  @Roles(RolUsuario.OPERADOR, RolUsuario.BOMBERO, RolUsuario.ADMINISTRADOR)
+  @Roles(RolUsuario.OPERADOR, RolUsuario.ADMINISTRADOR)
   @ApiOperation({
     summary: 'Consultar KPIs Tácticos en Vivo',
     description: 'Retorna las métricas clave en tiempo real: incidentes activos, camiones en combate, hidrantes y agua disponible.',
@@ -77,7 +77,7 @@ export class IncidentesController {
   }
 
   @Get(':id/timeline')
-  @Roles(RolUsuario.OPERADOR, RolUsuario.BOMBERO, RolUsuario.ADMINISTRADOR)
+  @Roles(RolUsuario.OPERADOR, RolUsuario.ADMINISTRADOR)
   @ApiOperation({
     summary: 'Obtener Línea de Tiempo del Incidente',
     description: 'Retorna la bitácora inmutable de novedades y cambios de estado del incidente.',
@@ -88,7 +88,7 @@ export class IncidentesController {
   }
 
   @Get(':id/despachos')
-  @Roles(RolUsuario.OPERADOR, RolUsuario.BOMBERO, RolUsuario.ADMINISTRADOR)
+  @Roles(RolUsuario.OPERADOR, RolUsuario.ADMINISTRADOR)
   @ApiOperation({
     summary: 'Listar Unidades Despachadas',
     description: 'Retorna los camiones cisterna y recursos asignados al siniestro.',
@@ -137,7 +137,7 @@ export class IncidentesController {
   }
 
   @Patch(':id/estado')
-  @Roles(RolUsuario.OPERADOR, RolUsuario.BOMBERO, RolUsuario.ADMINISTRADOR)
+  @Roles(RolUsuario.OPERADOR, RolUsuario.ADMINISTRADOR)
   @ApiOperation({
     summary: 'Actualizar Estado del Siniestro',
     description: 'Transiciona el estado (EN_COMBATE, CONTROLADO, CERRADO) y registra una novedad en la bitácora.',

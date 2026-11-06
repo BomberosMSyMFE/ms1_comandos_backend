@@ -52,9 +52,19 @@ El microservicio se diseñó siguiendo una separación estricta de responsabilid
 
 | Rol | Email | Contraseña | Descripción |
 |---|---|---|---|
-| **`OPERADOR`** | `nataly.comandos@bomberos.gob.bo` | `Comandos2026!` | Despachador en Sala de Crisis (Acceso a Despacho SAGA, CRUD Incidentes, Reportes) |
-| **`BOMBERO`** | `bombero.b04@bomberos.gob.bo` | `Bombero2026!` | Cuadrilla de Cisterna (Consulta de Incidentes y cambio de estado en escena) |
-| **`ADMINISTRADOR`** | `admin@bomberos.gob.bo` | `AdminSeguro2026!` | Auditoría global y administración de plataforma |
+| **`ADMIN`** | admin@bomberos.gob.bo | `AdminSeguro2026!` | SuperUsuario | 
+
+| **`OPERADOR`** | nataly.comandos@bomberos.gob.bo | `Comandos2026!` | Tel: +591 72115304 (Líder Sala de Crisis)   | 
+
+| **`OPERADOR`** | operador.norte@bomberos.gob.bo | `Operador2026!` | Tel: +591 60495035 (Estación Norte)  |
+
+| **`OPERADOR`** | operador.sur@bomberos.gob.bo | `Operador2026!` | Tel: +591 70012347 (Estación Sur - Plan 3000)   |
+
+| **`OPERADOR`** | operador.este@bomberos.gob.bo | `Operador2026!` | Tel: +591 70012348 (Estación Este - Pampa de la Isla)   |
+
+| **`OPERADOR`** | operador.oeste@bomberos.gob.bo | `Operador2026!` | Tel: +591 70012349 (Estación Oeste - Equipetrol) |
+                                                                                                      
+| **`BOMBERO`** | 15 Bomberos: bombero.b01@bomberos.gob.bo a bombero.b15@bomberos.gob.bo | `Bombero2026!` | Cuadrilla de Cisterna (Consulta de Incidentes y cambio de estado     
 
 > *Nota operativa:* Los ciudadanos interactúan exclusivamente vía WhatsApp con el bot n8n / webhook externo; no poseen cuentas directas ni credenciales en este microservicio.
 

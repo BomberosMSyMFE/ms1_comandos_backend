@@ -13,6 +13,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "db:local": "java -Djava.library.path=/home/nataly/dynamodb-local/DynamoDBLocal_lib -jar /home/nataly/dynamodb-local/DynamoDBLocal.jar -sharedDb -dbPath /home/nataly/dynamodb-local/data -port 8000",
     "db:setup": "ts-node scripts/init-dynamodb.ts",
     "db:seed": "ts-node scripts/seed-data.ts",
     "seed": "ts-node scripts/seed-data.ts",
