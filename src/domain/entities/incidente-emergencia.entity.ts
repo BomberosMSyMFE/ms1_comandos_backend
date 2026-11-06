@@ -47,7 +47,11 @@ export class IncidenteEmergencia {
   }
 
   public validarDespacho(camionId: string): void {
-    if (this._estado === EstadoIncidente.CONTROLADO || this._estado === EstadoIncidente.CERRADO) {
+    if (
+      this._estado === EstadoIncidente.CONTROLADO ||
+      this._estado === EstadoIncidente.CERRADO ||
+      this._estado === EstadoIncidente.LIQUIDADO
+    ) {
       throw new EstadoInvalidoException(
         `No se puede despachar la unidad '${camionId}'. El incidente '${this.id}' se encuentra en estado '${this._estado}'.`,
       );
@@ -68,8 +72,8 @@ export class IncidenteEmergencia {
   }
 
   public marcarEnCombate(): void {
-    if (this._estado === EstadoIncidente.CERRADO) {
-      throw new EstadoInvalidoException(`No se puede marcar en combate un incidente ya cerrado.`);
+    if (this._estado === EstadoIncidente.CERRADO || this._estado === EstadoIncidente.LIQUIDADO) {
+      throw new EstadoInvalidoException(`No se puede marcar en combate un incidente ya finalizado.`);
     }
     this._estado = EstadoIncidente.EN_COMBATE;
     this._updatedAt = new Date().toISOString();
@@ -79,17 +83,27 @@ export class IncidenteEmergencia {
     if (this._estado === EstadoIncidente.PENDIENTE) {
       throw new EstadoInvalidoException(`No se puede dar por controlado un incidente que aún está pendiente.`);
     }
-    if (this._estado === EstadoIncidente.CERRADO) {
-      throw new EstadoInvalidoException(`El incidente ya fue cerrado definitivamente.`);
+    if (this._estado === EstadoIncidente.CERRADO || this._estado === EstadoIncidente.LIQUIDADO) {
+      throw new EstadoInvalidoException(`El incidente ya fue finalizado definitivamente.`);
     }
     this._estado = EstadoIncidente.CONTROLADO;
     this._updatedAt = new Date().toISOString();
   }
 
-  public cerrar(): void {
-    if (this._estado !== EstadoIncidente.CONTROLADO) {
+  public liquidar(): void {
+    if (this._estado !== EstadoIncidente.CONTROLADO && this._estado !== EstadoIncidente.EN_COMBATE) {
       throw new EstadoInvalidoException(
-        `Regla de negocio: El incidente debe estar en estado 'CONTROLADO' antes de cerrarse formalmente. Estado actual: '${this._estado}'.`,
+        `Regla de negocio: El incidente debe estar en estado 'CONTROLADO' o 'EN_COMBATE' antes de liquidarse. Estado actual: '${this._estado}'.`,
+      );
+    }
+    this._estado = EstadoIncidente.LIQUIDADO;
+    this._updatedAt = new Date().toISOString();
+  }
+
+  public cerrar(): void {
+    if (this._estado !== EstadoIncidente.CONTROLADO && this._estado !== EstadoIncidente.LIQUIDADO) {
+      throw new EstadoInvalidoException(
+        `Regla de negocio: El incidente debe estar en estado 'CONTROLADO' o 'LIQUIDADO' antes de cerrarse formalmente. Estado actual: '${this._estado}'.`,
       );
     }
     this._estado = EstadoIncidente.CERRADO;

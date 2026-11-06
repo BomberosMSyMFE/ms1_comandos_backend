@@ -68,4 +68,20 @@ describe('IncidenteEmergencia (Reglas Críticas del Negocio)', () => {
     incidente.cerrar();
     expect(incidente.estado).toBe(EstadoIncidente.CERRADO);
   });
+
+  it('debe permitir liquidar el incidente si está en estado CONTROLADO o EN_COMBATE', () => {
+    const incidente = new IncidenteEmergencia(
+      'inc-01',
+      'INC-2026-001',
+      'ESTRUCTURAL',
+      NivelSeveridad.ALTA,
+      'Fuego controlado',
+      ubicacionValida,
+      'operador-1',
+      EstadoIncidente.CONTROLADO,
+    );
+
+    incidente.liquidar();
+    expect(incidente.estado).toBe(EstadoIncidente.LIQUIDADO);
+  });
 });

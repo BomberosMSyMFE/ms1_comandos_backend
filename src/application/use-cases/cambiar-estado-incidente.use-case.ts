@@ -33,6 +33,9 @@ export class CambiarEstadoIncidenteUseCase {
       case EstadoIncidente.CONTROLADO:
         incidente.controlar();
         break;
+      case EstadoIncidente.LIQUIDADO:
+        incidente.liquidar();
+        break;
       case EstadoIncidente.CERRADO:
         incidente.cerrar();
         break;

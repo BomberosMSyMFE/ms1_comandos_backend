@@ -17,6 +17,9 @@ describe('LoginSsoUseCase (Single Sign-On)', () => {
     RolUsuario.OPERADOR,
     'Estación Central',
     true,
+    undefined,
+    undefined,
+    '+591 70012345',
   );
 
   beforeEach(() => {
@@ -45,6 +48,7 @@ describe('LoginSsoUseCase (Single Sign-On)', () => {
     expect(result.token).toBe('jwt.fake.token');
     expect(result.usuario.email).toBe('nataly.comandos@bomberos.gob.bo');
     expect(result.usuario.rol).toBe(RolUsuario.OPERADOR);
+    expect(result.usuario.telefonoMovil).toBe('+591 70012345');
     expect(mockUsuarioRepo.guardar).toHaveBeenCalled(); // Guarda el último login
   });
 

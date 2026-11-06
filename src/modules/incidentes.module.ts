@@ -9,6 +9,7 @@ import { CambiarEstadoIncidenteUseCase } from '../application/use-cases/cambiar-
 import { ListarIncidentesActivosUseCase } from '../application/use-cases/listar-incidentes-activos.use-case';
 import { ObtenerTimelineIncidenteUseCase } from '../application/use-cases/obtener-timeline-incidente.use-case';
 import { ObtenerDespachosIncidenteUseCase } from '../application/use-cases/obtener-despachos-incidente.use-case';
+import { ObtenerKpisTacticosUseCase } from '../application/use-cases/obtener-kpis-tacticos.use-case';
 
 @Module({
   controllers: [IncidentesController],
@@ -42,6 +43,12 @@ import { ObtenerDespachosIncidenteUseCase } from '../application/use-cases/obten
       inject: [DynamoDbIncidenteRepository],
     },
     {
+      provide: ObtenerKpisTacticosUseCase,
+      useFactory: (incRepo: DynamoDbIncidenteRepository) =>
+        new ObtenerKpisTacticosUseCase(incRepo),
+      inject: [DynamoDbIncidenteRepository],
+    },
+    {
       provide: ObtenerTimelineIncidenteUseCase,
       useFactory: (histRepo: DynamoDbHistorialRepository) =>
         new ObtenerTimelineIncidenteUseCase(histRepo),
@@ -59,6 +66,7 @@ import { ObtenerDespachosIncidenteUseCase } from '../application/use-cases/obten
     DynamoDbHistorialRepository,
     DynamoDbDespachoRepository,
     SalaCrisisGateway,
+    ObtenerKpisTacticosUseCase,
   ],
 })
 export class IncidentesModule {}

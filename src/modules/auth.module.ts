@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from '../infrastructure/controllers/auth.controller';
 import { LoginSsoUseCase } from '../application/use-cases/login-sso.use-case';
 import { ValidarSesionUseCase } from '../application/use-cases/validar-sesion.use-case';
+import { ListarOperadoresUseCase } from '../application/use-cases/listar-operadores.use-case';
 import { DynamoDbUsuarioRepository } from '../infrastructure/persistence/dynamodb/dynamodb-usuario.repository';
 import { JwtTokenService } from '../infrastructure/security/jwt-token.service';
 import { BcryptPasswordHasher } from '../infrastructure/security/bcrypt-password-hasher';
@@ -41,6 +42,12 @@ import { EnvConfig } from '../infrastructure/config/env.config';
         new ValidarSesionUseCase(usuarioRepo, tokenService),
       inject: [DynamoDbUsuarioRepository, JwtTokenService],
     },
+    {
+      provide: ListarOperadoresUseCase,
+      useFactory: (usuarioRepo: DynamoDbUsuarioRepository) =>
+        new ListarOperadoresUseCase(usuarioRepo),
+      inject: [DynamoDbUsuarioRepository],
+    },
   ],
   exports: [
     JwtModule,
@@ -49,6 +56,8 @@ import { EnvConfig } from '../infrastructure/config/env.config';
     JwtCookieAuthGuard,
     RolesGuard,
     DynamoDbUsuarioRepository,
+    ListarOperadoresUseCase,
   ],
 })
 export class AuthModule {}
+

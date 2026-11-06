@@ -13,8 +13,9 @@ import {
 import { Request, Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { LoginSsoUseCase } from '../../application/use-cases/login-sso.use-case';
+import { ListarOperadoresUseCase } from '../../application/use-cases/listar-operadores.use-case';
 import { LoginRequestDto } from '../../application/dtos/auth/login-request.dto';
-import { LoginResponseDto } from '../../application/dtos/auth/login-response.dto';
+import { LoginResponseDto, UsuarioResponseDto } from '../../application/dtos/auth/login-response.dto';
 import { JwtCookieAuthGuard } from '../security/guards/jwt-cookie-auth.guard';
 import { CurrentUser } from '../security/decorators/current-user.decorator';
 import { EnvConfig } from '../config/env.config';
@@ -26,8 +27,32 @@ import { CredencialesInvalidasException } from '../../domain/exceptions/credenci
 export class AuthController {
   constructor(
     private readonly loginSsoUseCase: LoginSsoUseCase,
+    private readonly listarOperadoresUseCase: ListarOperadoresUseCase,
     private readonly logger: TacticalLoggerService,
   ) {}
+
+  @Get('operadores')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Listar Operadores Activos para Alertas WhatsApp (n8n)',
+    description: 'Devuelve la lista de operadores activos con su teléfono móvil y estación base para el envío de alertas automáticas vía n8n.',
+  })
+  @ApiResponse({ status: 200, description: 'Lista de operadores activos', type: [UsuarioResponseDto] })
+  async listarOperadores(): Promise<UsuarioResponseDto[]> {
+    this.logger.log(
+      'AUTH-OPERADORES',
+      '[GET /operadores] Consulta de operadores activos para integración con n8n/WhatsApp.',
+    );
+    const operadores = await this.listarOperadoresUseCase.execute();
+    return operadores.map((op) => ({
+      id: op.id,
+      nombreCompleto: op.nombreCompleto,
+      email: op.email,
+      rol: op.rol,
+      estacionBase: op.estacionBase,
+      telefonoMovil: op.telefonoMovil,
+    }));
+  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)

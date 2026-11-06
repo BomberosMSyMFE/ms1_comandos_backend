@@ -73,6 +73,7 @@ export class LoginSsoUseCase {
         email: usuario.email,
         rol: usuario.rol,
         estacionBase: usuario.estacionBase,
+        telefonoMovil: usuario.telefonoMovil,
       },
       token,
     };

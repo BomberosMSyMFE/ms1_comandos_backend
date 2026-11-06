@@ -13,9 +13,11 @@ import { CambiarEstadoIncidenteUseCase } from '../../application/use-cases/cambi
 import { ListarIncidentesActivosUseCase } from '../../application/use-cases/listar-incidentes-activos.use-case';
 import { ObtenerTimelineIncidenteUseCase } from '../../application/use-cases/obtener-timeline-incidente.use-case';
 import { ObtenerDespachosIncidenteUseCase } from '../../application/use-cases/obtener-despachos-incidente.use-case';
+import { ObtenerKpisTacticosUseCase } from '../../application/use-cases/obtener-kpis-tacticos.use-case';
 import { CrearIncidenteDto } from '../../application/dtos/incidente/crear-incidente.dto';
 import { CambiarEstadoIncidenteDto } from '../../application/dtos/incidente/cambiar-estado.dto';
 import { IncidenteResponseDto } from '../../application/dtos/incidente/incidente-response.dto';
+import { KpisTacticosResponseDto } from '../../application/dtos/incidente/kpis-tacticos-response.dto';
 import { JwtCookieAuthGuard } from '../security/guards/jwt-cookie-auth.guard';
 import { RolesGuard } from '../security/guards/roles.guard';
 import { Roles } from '../security/decorators/roles.decorator';
@@ -32,6 +34,7 @@ export class IncidentesController {
     private readonly registrarIncidenteUseCase: RegistrarIncidenteUseCase,
     private readonly cambiarEstadoIncidenteUseCase: CambiarEstadoIncidenteUseCase,
     private readonly listarIncidentesActivosUseCase: ListarIncidentesActivosUseCase,
+    private readonly obtenerKpisTacticosUseCase: ObtenerKpisTacticosUseCase,
     private readonly obtenerTimelineIncidenteUseCase: ObtenerTimelineIncidenteUseCase,
     private readonly obtenerDespachosIncidenteUseCase: ObtenerDespachosIncidenteUseCase,
     private readonly logger: TacticalLoggerService,
@@ -60,6 +63,17 @@ export class IncidentesController {
       createdAt: inc.createdAt,
       updatedAt: inc.updatedAt,
     }));
+  }
+
+  @Get('kpis-tacticos')
+  @Roles(RolUsuario.OPERADOR, RolUsuario.BOMBERO, RolUsuario.ADMINISTRADOR)
+  @ApiOperation({
+    summary: 'Consultar KPIs Tácticos en Vivo',
+    description: 'Retorna las métricas clave en tiempo real: incidentes activos, camiones en combate, hidrantes y agua disponible.',
+  })
+  @ApiResponse({ status: 200, type: KpisTacticosResponseDto })
+  async obtenerKpisTacticos(): Promise<KpisTacticosResponseDto> {
+    return this.obtenerKpisTacticosUseCase.execute();
   }
 
   @Get(':id/timeline')

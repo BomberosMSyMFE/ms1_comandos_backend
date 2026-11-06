@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  DynamoDBDocumentClient,
+  GetCommand,
+  PutCommand,
+  QueryCommand,
+  ScanCommand,
+} from '@aws-sdk/lib-dynamodb';
 import { IUsuarioRepository } from '../../../domain/repositories/usuario.repository.interface';
 import { Usuario } from '../../../domain/entities/usuario.entity';
 import { RolUsuario } from '../../../domain/value-objects/rol-usuario.vo';
@@ -18,6 +24,7 @@ export class DynamoDbUsuarioRepository implements IUsuarioRepository {
       password_hash: usuario.passwordHash,
       rol: usuario.rol,
       estacion_base: usuario.estacionBase,
+      telefono_movil: usuario.telefonoMovil || '',
       activo: usuario.activo,
       ultimo_login: usuario.ultimoLogin || null,
       created_at: usuario.createdAt,
@@ -62,6 +69,35 @@ export class DynamoDbUsuarioRepository implements IUsuarioRepository {
     return this.mapToDomain(response.Items[0]);
   }
 
+  async listarOperadoresActivos(): Promise<Usuario[]> {
+    const response = await this.docClient.send(
+      new ScanCommand({
+        TableName: this.tableName,
+        FilterExpression: '#rol = :rol AND #activo = :activo',
+        ExpressionAttributeNames: {
+          '#rol': 'rol',
+          '#activo': 'activo',
+        },
+        ExpressionAttributeValues: {
+          ':rol': RolUsuario.OPERADOR,
+          ':activo': true,
+        },
+      }),
+    );
+
+    return (response.Items || []).map((item) => this.mapToDomain(item));
+  }
+
+  async listarTodos(): Promise<Usuario[]> {
+    const response = await this.docClient.send(
+      new ScanCommand({
+        TableName: this.tableName,
+      }),
+    );
+
+    return (response.Items || []).map((item) => this.mapToDomain(item));
+  }
+
   private mapToDomain(item: any): Usuario {
     return new Usuario(
       item.usuario_id,
@@ -73,6 +109,8 @@ export class DynamoDbUsuarioRepository implements IUsuarioRepository {
       item.activo,
       item.ultimo_login || undefined,
       item.created_at,
+      item.telefono_movil || item.telefonoMovil || '',
     );
   }
 }
+

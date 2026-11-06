@@ -4,4 +4,5 @@ export enum EstadoIncidente {
   EN_COMBATE = 'EN_COMBATE',
   CONTROLADO = 'CONTROLADO',
   CERRADO = 'CERRADO',
+  LIQUIDADO = 'LIQUIDADO',
 }

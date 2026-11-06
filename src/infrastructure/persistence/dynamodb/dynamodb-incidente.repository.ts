@@ -52,12 +52,13 @@ export class DynamoDbIncidenteRepository implements IIncidenteRepository {
     const response = await this.docClient.send(
       new ScanCommand({
         TableName: this.tableName,
-        FilterExpression: '#st <> :cerrado',
+        FilterExpression: '#st <> :cerrado AND #st <> :liquidado',
         ExpressionAttributeNames: {
           '#st': 'estado',
         },
         ExpressionAttributeValues: {
           ':cerrado': EstadoIncidente.CERRADO,
+          ':liquidado': EstadoIncidente.LIQUIDADO,
         },
       }),
     );

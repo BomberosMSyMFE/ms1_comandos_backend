@@ -1,29 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { UsuarioResponseDto } from './usuario-response.dto';
 
-export class UsuarioInfoDto {
-  @ApiProperty({ example: 'usr_0192e3a4-8f12-789a-bcde-000000000001' })
-  id: string;
+export { UsuarioResponseDto };
 
-  @ApiProperty({ example: 'Nataly Martínez' })
-  nombreCompleto: string;
-
-  @ApiProperty({ example: 'nataly.comandos@bomberos.gob.bo' })
-  email: string;
-
-  @ApiProperty({ example: 'OPERADOR', enum: ['OPERADOR', 'BOMBERO', 'ADMINISTRADOR'] })
-  rol: string;
-
-  @ApiProperty({ example: 'Estación Central - Santa Cruz' })
-  estacionBase: string;
-}
+export class UsuarioInfoDto extends UsuarioResponseDto {}
 
 export class LoginResponseDto {
-  @ApiProperty({ example: 'Autenticación exitosa. Cookie de sesión emitida.' })
+  @ApiProperty({ example: 'Autenticación exitosa. Sesión SSO iniciada.' })
   mensaje: string;
 
-  @ApiProperty({ type: UsuarioInfoDto })
-  usuario: UsuarioInfoDto;
+  @ApiProperty({ type: UsuarioResponseDto })
+  usuario: UsuarioResponseDto;
 
   @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...', description: 'JWT generado (también fijado en cookie HttpOnly)' })
   token: string;
 }
+
