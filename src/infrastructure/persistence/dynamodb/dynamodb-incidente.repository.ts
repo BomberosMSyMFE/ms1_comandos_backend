@@ -22,6 +22,7 @@ export class DynamoDbIncidenteRepository implements IIncidenteRepository {
       estado: incidente.estado,
       ubicacion: incidente.ubicacion.toJSON(),
       unidades_asignadas: incidente.unidadesAsignadas,
+      camion_asignado: incidente.camionAsignado || null,
       operador_id: incidente.operadorId,
       denunciante: incidente.denunciante || null,
       created_at: incidente.createdAt,
@@ -97,6 +98,7 @@ export class DynamoDbIncidenteRepository implements IIncidenteRepository {
       item.denunciante || undefined,
       item.created_at,
       item.updated_at,
+      item.camion_asignado || undefined,
     );
   }
 }

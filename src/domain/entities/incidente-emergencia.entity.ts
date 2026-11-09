@@ -13,6 +13,7 @@ export interface DenuncianteInfo {
 export class IncidenteEmergencia {
   private _estado: EstadoIncidente;
   private _unidadesAsignadas: number;
+  private _camionAsignado?: string;
   private _updatedAt: string;
 
   constructor(
@@ -28,14 +29,20 @@ export class IncidenteEmergencia {
     public denunciante?: DenuncianteInfo,
     public readonly createdAt: string = new Date().toISOString(),
     updatedAt?: string,
+    camionAsignado?: string,
   ) {
     this._estado = estadoInicial;
     this._unidadesAsignadas = unidadesAsignadasInicial;
     this._updatedAt = updatedAt || createdAt;
+    this._camionAsignado = camionAsignado;
   }
 
   get estado(): EstadoIncidente {
     return this._estado;
+  }
+
+  get camionAsignado(): string | undefined {
+    return this._camionAsignado;
   }
 
   get unidadesAsignadas(): number {
@@ -61,6 +68,7 @@ export class IncidenteEmergencia {
   public despachar(camionId: string): void {
     this.validarDespacho(camionId);
     this._estado = EstadoIncidente.DESPACHADO;
+    this._camionAsignado = camionId;
     this._unidadesAsignadas += 1;
     this._updatedAt = new Date().toISOString();
   }
@@ -68,6 +76,9 @@ export class IncidenteEmergencia {
   public restaurarEstado(estadoPrevio: EstadoIncidente, unidadesPrevias: number): void {
     this._estado = estadoPrevio;
     this._unidadesAsignadas = unidadesPrevias;
+    if (unidadesPrevias === 0) {
+      this._camionAsignado = undefined;
+    }
     this._updatedAt = new Date().toISOString();
   }
 

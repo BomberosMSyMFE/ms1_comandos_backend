@@ -39,6 +39,9 @@ export class IncidenteResponseDto {
   @ApiProperty({ example: 0 })
   unidadesAsignadas: number;
 
+  @ApiProperty({ example: 'B-11', required: false })
+  camionAsignado?: string;
+
   @ApiProperty({ example: 'usr_0192e3a4-8f12-789a-bcde-000000000001' })
   operadorId: string;
 
