@@ -27,7 +27,10 @@ export class HttpFlotasClient implements IFlotasClientPort {
     tipoFuego: string,
     opciones?: OpcionesReservaCamion | string,
   ): Promise<ReservaCamionResponse> {
-    const camionId = typeof opciones === 'string' ? opciones : opciones?.camionId;
+    let camionId = typeof opciones === 'string' ? opciones : opciones?.camionId;
+    if (camionId) {
+      camionId = camionId.replace(/-SCZ$/i, '');
+    }
     const latitud = typeof opciones === 'object' ? opciones.latitud : undefined;
     const longitud = typeof opciones === 'object' ? opciones.longitud : undefined;
     const litrosMinimos = typeof opciones === 'object' ? opciones.litrosMinimos : undefined;
@@ -118,9 +121,10 @@ export class HttpFlotasClient implements IFlotasClientPort {
     camionId: string,
     motivoCompensacion?: string,
   ): Promise<{ exito: boolean; mensaje?: string }> {
+    const targetCamionId = camionId ? camionId.replace(/-SCZ$/i, '') : camionId;
     const payload = {
       incidenteId,
-      camionId,
+      camionId: targetCamionId,
       motivoCompensacion: motivoCompensacion || 'INVENTARIO_RECHAZO_FALTA_STOCK',
     };
 
