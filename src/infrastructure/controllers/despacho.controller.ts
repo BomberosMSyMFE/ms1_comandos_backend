@@ -80,6 +80,16 @@ export class DespachoController {
     return res.status(HttpStatus.OK).json(resultado);
   }
 
+  @Get('historial')
+  @Roles(RolUsuario.OPERADOR, RolUsuario.ADMINISTRADOR)
+  @ApiOperation({
+    summary: 'Listar Transacciones SAGA Recientes',
+    description: 'Retorna los eventos y compensaciones recientes registrados en DynamoDB.',
+  })
+  async listarHistorialSaga() {
+    return this.sagaLogRepo.listarRecientes(30);
+  }
+
   @Get(':sagaId/auditoria')
   @Roles(RolUsuario.OPERADOR, RolUsuario.ADMINISTRADOR)
   @ApiOperation({
