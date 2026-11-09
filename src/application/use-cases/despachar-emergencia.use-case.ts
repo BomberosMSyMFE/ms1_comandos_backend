@@ -90,7 +90,8 @@ export class DespacharEmergenciaUseCase {
     await this.sagaLogRepo.registrarPaso({
       sagaId,
       timestamp: Date.now(),
-      incidenteId: incidente.id,
+      incidenteId: incidente.codigoRadial || incidente.id,
+      incidenteCodigo: incidente.codigoRadial || incidente.id,
       estadoSaga: 'INICIADA',
       pasoActual: 'PASO_0_VALIDACION_DOMINIO',
       idempotencyKey,
@@ -125,7 +126,8 @@ export class DespacharEmergenciaUseCase {
       await this.sagaLogRepo.registrarPaso({
         sagaId,
         timestamp: Date.now(),
-        incidenteId: incidente.id,
+        incidenteId: incidente.codigoRadial || incidente.id,
+        incidenteCodigo: incidente.codigoRadial || incidente.id,
         estadoSaga: 'FALLO_PASO_1',
         pasoActual: 'PASO_1_FLOTAS',
         detalleError: flotasRes.error || 'No hay camiones disponibles en el radio operativo.',
@@ -150,7 +152,8 @@ export class DespacharEmergenciaUseCase {
     await this.sagaLogRepo.registrarPaso({
       sagaId,
       timestamp: Date.now(),
-      incidenteId: incidente.id,
+      incidenteId: incidente.codigoRadial || incidente.id,
+      incidenteCodigo: incidente.codigoRadial || incidente.id,
       estadoSaga: 'RESERVA_CAMION_OK',
       pasoActual: 'PASO_1_FLOTAS',
       payloadRollback: { camionId: flotasRes.camionId },
@@ -162,7 +165,7 @@ export class DespacharEmergenciaUseCase {
     const itemEspuma = insumosAAsignar.find(
       (i) => i.insumoId.toLowerCase().includes('espuma') || i.insumoId.toLowerCase().includes('afff'),
     );
-    const litrosEspuma = itemEspuma ? itemEspuma.cantidad : 250.0;
+    const litrosEspuma = dto.litrosEspumogeno || (itemEspuma ? itemEspuma.cantidad : 250.0);
 
     this.logger?.log(
       'SAGA-ORCHESTRATOR',
@@ -205,7 +208,8 @@ export class DespacharEmergenciaUseCase {
       await this.sagaLogRepo.registrarPaso({
         sagaId,
         timestamp: Date.now(),
-        incidenteId: incidente.id,
+        incidenteId: incidente.codigoRadial || incidente.id,
+        incidenteCodigo: incidente.codigoRadial || incidente.id,
         estadoSaga: 'COMPENSADA',
         pasoActual: 'PASO_2_INVENTARIO_ROLLBACK',
         detalleError: inventarioRes.error || 'Stock crítico insuficiente en almacén central.',
@@ -261,7 +265,8 @@ export class DespacharEmergenciaUseCase {
     await this.sagaLogRepo.registrarPaso({
       sagaId,
       timestamp: Date.now(),
-      incidenteId: incidente.id,
+      incidenteId: incidente.codigoRadial || incidente.id,
+      incidenteCodigo: incidente.codigoRadial || incidente.id,
       estadoSaga: 'COMPLETADA',
       pasoActual: 'PASO_FINAL_CONSOLIDACION',
       payloadRollback: { camionId: flotasRes.camionId, despachoId },

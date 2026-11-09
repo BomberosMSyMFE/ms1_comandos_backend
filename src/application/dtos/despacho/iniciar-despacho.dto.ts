@@ -35,4 +35,18 @@ export class IniciarDespachoDto {
   @ValidateNested({ each: true })
   @Type(() => InsumoRequeridoDto)
   insumosRequeridos?: InsumoRequeridoDto[];
+
+  @ApiPropertyOptional({ example: 'URBANO_ESTRUCTURAL', description: 'Tipo o clasificación del incidente' })
+  @IsOptional()
+  @IsString()
+  tipoIncidente?: string;
+
+  @ApiPropertyOptional({ example: 250, description: 'Litros de espumógeno requeridos para el siniestro' })
+  @IsOptional()
+  litrosEspumogeno?: number;
+
+  @ApiPropertyOptional({ description: 'Materiales o kits solicitados para despacho' })
+  @IsOptional()
+  @IsArray()
+  materiales?: string[];
 }
