@@ -106,11 +106,11 @@ export class DespacharEmergenciaUseCase {
     this.logger?.log(
       'SAGA-ORCHESTRATOR',
       `[PASO_1_FLOTAS] Solicitando reserva de unidad a MS-02 Flotas... | Camión solicitado: ${dto.camionId || 'AUTO_ASIGNACION'}`,
-      { sagaId, incidenteId: incidente.id, camionId: dto.camionId, direccion: direccionIncidente, cuadrante: cuadranteIncidente },
+      { sagaId, incidenteId: incidente.id, codigoRadial: incidente.codigoRadial, camionId: dto.camionId, direccion: direccionIncidente, cuadrante: cuadranteIncidente },
     );
 
     const flotasRes = await this.flotasClient.reservarCamion(
-      incidente.id,
+      incidente.codigoRadial || incidente.id,
       incidente.tipoIncidente,
       {
         camionId: dto.camionId,
@@ -120,6 +120,8 @@ export class DespacharEmergenciaUseCase {
         ubicacion: direccionIncidente,
         cuadrante: cuadranteIncidente,
         litrosMinimos: dto.camionId && dto.camionId !== 'AUTO_ASIGNACION' ? 0 : (incidente.severidad === 'CRITICA' ? 8000 : 3000),
+        uuid: incidente.id,
+        codigoRadial: incidente.codigoRadial,
       },
     );
 
