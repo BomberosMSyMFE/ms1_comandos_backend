@@ -46,7 +46,7 @@ export class CambiarEstadoIncidenteUseCase {
     await this.incidenteRepo.guardar(incidente);
 
     const historial = HistorialIncidente.registrar(
-      incidenteId,
+      incidente.id,
       incidente.estado,
       operadorId,
       dto.novedadTexto,
@@ -55,7 +55,11 @@ export class CambiarEstadoIncidenteUseCase {
     );
     await this.historialRepo.guardar(historial);
 
-    await this.eventNotifier.notificarCambioEstado(incidenteId, incidente.estado, historial);
+    await this.eventNotifier.notificarCambioEstado(incidente.id, incidente.estado, {
+      ...historial,
+      incidenteId: incidente.id,
+      codigoRadial: incidente.codigoRadial,
+    });
 
     return incidente;
   }

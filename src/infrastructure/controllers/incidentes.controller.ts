@@ -150,12 +150,13 @@ export class IncidentesController {
     @Body() dto: CambiarEstadoIncidenteDto,
     @CurrentUser('id') operadorId: string,
   ) {
+    const operadorEfectivo = operadorId || 'usr_op_nataly_001';
     this.logger.log(
       'INCIDENTES-CTRL',
-      `[PATCH /:id/estado] Transición de estado solicitada para incidente '${id}' -> ${dto.nuevoEstado}. Operador: '${operadorId}'.`,
-      { incidenteId: id, nuevoEstado: dto.nuevoEstado, operadorId },
+      `[PATCH /:id/estado] Transición de estado solicitada para incidente '${id}' -> ${dto.nuevoEstado}. Operador: '${operadorEfectivo}'.`,
+      { incidenteId: id, nuevoEstado: dto.nuevoEstado, operadorId: operadorEfectivo },
     );
-    const inc = await this.cambiarEstadoIncidenteUseCase.execute(id, dto, operadorId);
+    const inc = await this.cambiarEstadoIncidenteUseCase.execute(id, dto, operadorEfectivo);
     this.logger.log(
       'INCIDENTES-CTRL',
       `[PATCH /:id/estado -> 200 OK] Incidente '${id}' actualizado a estado '${inc.estado}'.`,
