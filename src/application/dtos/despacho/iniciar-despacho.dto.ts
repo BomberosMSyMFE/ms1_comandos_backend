@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -43,10 +43,36 @@ export class IniciarDespachoDto {
 
   @ApiPropertyOptional({ example: 250, description: 'Litros de espumógeno requeridos para el siniestro' })
   @IsOptional()
+  @IsNumber()
   litrosEspumogeno?: number;
 
   @ApiPropertyOptional({ description: 'Materiales o kits solicitados para despacho' })
   @IsOptional()
   @IsArray()
   materiales?: string[];
+
+  @ApiPropertyOptional({ example: 'Av. Cristo Redentor 4to Anillo', description: 'Dirección o referencia del siniestro' })
+  @IsOptional()
+  @IsString()
+  direccion?: string;
+
+  @ApiPropertyOptional({ example: 'Parque Industrial Mza 12', description: 'Ubicación textual del siniestro' })
+  @IsOptional()
+  @IsString()
+  ubicacion?: string;
+
+  @ApiPropertyOptional({ example: -17.7833, description: 'Latitud GPS del siniestro' })
+  @IsOptional()
+  @IsNumber()
+  latitud?: number;
+
+  @ApiPropertyOptional({ example: -63.1821, description: 'Longitud GPS del siniestro' })
+  @IsOptional()
+  @IsNumber()
+  longitud?: number;
+
+  @ApiPropertyOptional({ example: 'NORTE', description: 'Zona o cuadrante táctico operativo' })
+  @IsOptional()
+  @IsString()
+  cuadrante?: string;
 }

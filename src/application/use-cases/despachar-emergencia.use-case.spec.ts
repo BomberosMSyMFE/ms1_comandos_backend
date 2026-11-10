@@ -53,6 +53,7 @@ describe('DespacharEmergenciaUseCase (Patrón SAGA Orquestado)', () => {
         tiempoLlegadaMinutos: 6.0,
       }),
       liberarCamion: jest.fn().mockResolvedValue({ exito: true }),
+      notificarDespacho: jest.fn().mockResolvedValue({ exito: true }),
     };
 
     mockInventarioClient = {
@@ -90,10 +91,62 @@ describe('DespacharEmergenciaUseCase (Patrón SAGA Orquestado)', () => {
     expect(resultado.status).toBe('EXITO');
     expect(resultado.datos?.estadoActual).toBe(EstadoIncidente.DESPACHADO);
     expect(resultado.datos?.camionAsignado).toBe('CAM-B04');
-    expect(mockFlotasClient.reservarCamion).toHaveBeenCalled();
+    expect(mockFlotasClient.reservarCamion).toHaveBeenCalledWith(
+      'inc-001',
+      'QUIMICO',
+      expect.objectContaining({
+        camionId: 'CAM-B04',
+        latitud: -17.7654,
+        longitud: -63.1432,
+      }),
+    );
+    expect(mockFlotasClient.notificarDespacho).toHaveBeenCalledWith(
+      expect.objectContaining({
+        unidadId: 'CAM-B04',
+        incidenteId: 'INC-2026-001',
+        tipoIncidente: 'QUIMICO',
+        latitud: -17.7654,
+        longitud: -63.1432,
+        prioridad: 'ALTA',
+      }),
+    );
     expect(mockInventarioClient.reservarInsumos).toHaveBeenCalled();
     expect(mockDespachoRepo.guardar).toHaveBeenCalled();
     expect(mockEventNotifier.notificarIncidenteDespachado).toHaveBeenCalled();
+  });
+
+  it('debe priorizar coordenadas y dirección explícitas pasadas en el DTO', async () => {
+    const dto = {
+      incidenteId: 'inc-001',
+      camionId: 'CAM-B04',
+      direccion: 'Av. Santos Dumont 5to Anillo',
+      latitud: -17.8200,
+      longitud: -63.1900,
+      cuadrante: 'SUR',
+    };
+
+    const resultado = await useCase.execute(dto, 'operador-1');
+
+    expect(resultado.status).toBe('EXITO');
+    expect(mockFlotasClient.reservarCamion).toHaveBeenCalledWith(
+      'inc-001',
+      'QUIMICO',
+      expect.objectContaining({
+        camionId: 'CAM-B04',
+        direccion: 'Av. Santos Dumont 5to Anillo',
+        ubicacion: 'Av. Santos Dumont 5to Anillo',
+        latitud: -17.8200,
+        longitud: -63.1900,
+        cuadrante: 'SUR',
+      }),
+    );
+    expect(mockFlotasClient.notificarDespacho).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ubicacion: 'Av. Santos Dumont 5to Anillo',
+        latitud: -17.8200,
+        longitud: -63.1900,
+      }),
+    );
   });
 
   it('debe ejecutar ROLLBACK COMPENSATORIO si MS-03 Inventario falla', async () => {

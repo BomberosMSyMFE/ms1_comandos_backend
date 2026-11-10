@@ -3,6 +3,9 @@ export interface OpcionesReservaCamion {
   latitud?: number;
   longitud?: number;
   litrosMinimos?: number;
+  direccion?: string;
+  ubicacion?: string;
+  cuadrante?: string;
 }
 
 export interface ReservaCamionResponse {
@@ -18,6 +21,16 @@ export interface ReservaCamionResponse {
   error?: string;
 }
 
+export interface NotificacionDespachoParams {
+  unidadId: string;
+  incidenteId: string;
+  tipoIncidente: string;
+  ubicacion: string;
+  latitud: number;
+  longitud: number;
+  prioridad: string;
+}
+
 export interface IFlotasClientPort {
   reservarCamion(
     incidenteId: string,
@@ -29,5 +42,9 @@ export interface IFlotasClientPort {
     incidenteId: string,
     camionId: string,
     motivoCompensacion?: string,
+  ): Promise<{ exito: boolean; mensaje?: string }>;
+
+  notificarDespacho?(
+    params: NotificacionDespachoParams,
   ): Promise<{ exito: boolean; mensaje?: string }>;
 }

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   IFlotasClientPort,
+  NotificacionDespachoParams,
   OpcionesReservaCamion,
   ReservaCamionResponse,
 } from '../../../application/ports/flotas-client.port';
@@ -34,6 +35,9 @@ export class HttpFlotasClient implements IFlotasClientPort {
     const latitud = typeof opciones === 'object' ? opciones.latitud : undefined;
     const longitud = typeof opciones === 'object' ? opciones.longitud : undefined;
     const litrosMinimos = typeof opciones === 'object' ? opciones.litrosMinimos : undefined;
+    const direccion = typeof opciones === 'object' ? opciones.direccion : undefined;
+    const ubicacion = typeof opciones === 'object' ? opciones.ubicacion : undefined;
+    const cuadrante = typeof opciones === 'object' ? opciones.cuadrante : undefined;
 
     const payload = {
       incidenteId,
@@ -41,6 +45,9 @@ export class HttpFlotasClient implements IFlotasClientPort {
       ...(camionId && camionId !== 'AUTO_ASIGNACION' ? { camionId } : {}),
       latitud: latitud ?? -17.7833,
       longitud: longitud ?? -63.1821,
+      direccion: direccion || ubicacion || 'Santa Cruz de la Sierra',
+      ubicacion: ubicacion || direccion || 'Santa Cruz de la Sierra',
+      cuadrante: cuadrante || 'CENTRO',
       litrosMinimos: litrosMinimos ?? 3000,
     };
 
@@ -172,5 +179,66 @@ export class HttpFlotasClient implements IFlotasClientPort {
     }
 
     return { exito: false, mensaje: 'No se pudo contactar a MS-02 para la liberación compensatoria.' };
+  }
+
+  async notificarDespacho(
+    params: NotificacionDespachoParams,
+  ): Promise<{ exito: boolean; mensaje?: string }> {
+    const payload = {
+      unidadId: params.unidadId,
+      incidenteId: params.incidenteId,
+      tipoIncidente: params.tipoIncidente,
+      ubicacion: params.ubicacion,
+      latitud: params.latitud,
+      longitud: params.longitud,
+      prioridad: params.prioridad,
+    };
+
+    const urls = [this.baseUrl];
+    if (this.baseUrl.includes(':8080')) {
+      urls.push(this.baseUrl.replace(':8080', ':8082'));
+    } else if (this.baseUrl.includes(':8082')) {
+      urls.push(this.baseUrl.replace(':8082', ':8080'));
+    }
+
+    for (const targetUrl of urls) {
+      try {
+        this.logger.log(
+          `[TACTICAL-AUDIT MS-02] Notificando despacho a Flotas en: ${targetUrl}/api/v1/flotas/despacho-notificar (Unidad: ${params.unidadId}, Incidente: ${params.incidenteId})`,
+        );
+
+        const response = await fetch(`${targetUrl}/api/v1/flotas/despacho-notificar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          const data = await response.json().catch(() => ({}));
+          this.logger.log(
+            `[TACTICAL-AUDIT MS-02] Notificación de despacho procesada con éxito por Flotas en ${targetUrl}.`,
+          );
+          return {
+            exito: true,
+            mensaje: data.mensaje || 'Despacho notificado exitosamente a MS-02 Flotas.',
+          };
+        }
+
+        const errorBody = await response.json().catch(() => null);
+        const errorMsg = errorBody?.mensaje || `Error HTTP ${response.status} en MS-02 Flotas`;
+        this.logger.warn(
+          `[TACTICAL-AUDIT MS-02 WARN] Fallo al notificar despacho en ${targetUrl}: ${errorMsg}`,
+        );
+      } catch (err: any) {
+        this.logger.warn(
+          `[TACTICAL-AUDIT MS-02 WARN] Error de red al notificar despacho en ${targetUrl}: ${err.message}`,
+        );
+      }
+    }
+
+    return {
+      exito: false,
+      mensaje: 'No fue posible enviar la notificación de despacho a MS-02 Flotas.',
+    };
   }
 }
