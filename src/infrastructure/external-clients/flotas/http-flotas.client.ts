@@ -38,9 +38,13 @@ export class HttpFlotasClient implements IFlotasClientPort {
     const direccion = typeof opciones === 'object' ? opciones.direccion : undefined;
     const ubicacion = typeof opciones === 'object' ? opciones.ubicacion : undefined;
     const cuadrante = typeof opciones === 'object' ? opciones.cuadrante : undefined;
+    const uuid = typeof opciones === 'object' ? (opciones as any)?.uuid : undefined;
+    const codRadial = typeof opciones === 'object' ? (opciones as any)?.codigoRadial : undefined;
 
     const payload = {
       incidenteId,
+      ...(uuid ? { incidenteUuid: uuid } : {}),
+      ...(codRadial ? { codigoRadial: codRadial } : {}),
       tipoFuego: this.normalizarTipoFuego(tipoFuego),
       ...(camionId && camionId !== 'AUTO_ASIGNACION' ? { camionId } : {}),
       latitud: latitud ?? -17.7833,

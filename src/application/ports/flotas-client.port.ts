@@ -6,6 +6,8 @@ export interface OpcionesReservaCamion {
   direccion?: string;
   ubicacion?: string;
   cuadrante?: string;
+  uuid?: string;
+  codigoRadial?: string;
 }
 
 export interface ReservaCamionResponse {

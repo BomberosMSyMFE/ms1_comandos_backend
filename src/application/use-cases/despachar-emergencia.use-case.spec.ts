@@ -92,7 +92,7 @@ describe('DespacharEmergenciaUseCase (Patrón SAGA Orquestado)', () => {
     expect(resultado.datos?.estadoActual).toBe(EstadoIncidente.DESPACHADO);
     expect(resultado.datos?.camionAsignado).toBe('CAM-B04');
     expect(mockFlotasClient.reservarCamion).toHaveBeenCalledWith(
-      'inc-001',
+      'INC-2026-001',
       'QUIMICO',
       expect.objectContaining({
         camionId: 'CAM-B04',
@@ -129,7 +129,7 @@ describe('DespacharEmergenciaUseCase (Patrón SAGA Orquestado)', () => {
 
     expect(resultado.status).toBe('EXITO');
     expect(mockFlotasClient.reservarCamion).toHaveBeenCalledWith(
-      'inc-001',
+      'INC-2026-001',
       'QUIMICO',
       expect.objectContaining({
         camionId: 'CAM-B04',
