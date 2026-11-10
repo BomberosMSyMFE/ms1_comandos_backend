@@ -87,7 +87,7 @@ export class DespachoController {
     description: 'Retorna los eventos y compensaciones recientes registrados en DynamoDB.',
   })
   async listarHistorialSaga() {
-    return this.sagaLogRepo.listarRecientes(30);
+    return this.sagaLogRepo.listarRecientes(150);
   }
 
   @Get(':sagaId/auditoria')
