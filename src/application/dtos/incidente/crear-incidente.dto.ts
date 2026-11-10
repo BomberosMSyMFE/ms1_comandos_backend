@@ -34,10 +34,50 @@ export class CrearIncidenteDto {
   @IsString()
   direccion?: string;
 
+  @ApiPropertyOptional({ example: 'Parque Industrial PI-27, Santa Cruz' })
+  @IsOptional()
+  @IsString()
+  ubicacion?: string;
+
   @ApiPropertyOptional({ example: 'Cuadrante Norte' })
   @IsOptional()
   @IsString()
   zonaCuadrante?: string;
+
+  @ApiPropertyOptional({ example: 'Cuadrante Norte' })
+  @IsOptional()
+  @IsString()
+  cuadrante?: string;
+
+  @ApiPropertyOptional({ example: 'Frente al almacén 4' })
+  @IsOptional()
+  @IsString()
+  referencia?: string;
+
+  @ApiPropertyOptional({ example: 'Av. Mutualista y 4to Anillo' })
+  @IsOptional()
+  @IsString()
+  direccionReportada?: string;
+
+  @ApiPropertyOptional({ example: 'Villa 1ro de Mayo' })
+  @IsOptional()
+  @IsString()
+  zona?: string;
+
+  @ApiPropertyOptional({ example: 'Distrito 7' })
+  @IsOptional()
+  @IsString()
+  distrito?: string;
+
+  @ApiPropertyOptional({ example: 'Barrio Lindo' })
+  @IsOptional()
+  @IsString()
+  barrio?: string;
+
+  @ApiPropertyOptional({ example: 'Plaza Principal Villa 1ro de Mayo' })
+  @IsOptional()
+  @IsString()
+  lugar?: string;
 
   @ApiPropertyOptional({ example: 'Juan Pérez' })
   @IsOptional()

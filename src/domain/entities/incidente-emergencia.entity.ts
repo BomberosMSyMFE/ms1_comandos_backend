@@ -112,9 +112,12 @@ export class IncidenteEmergencia {
   }
 
   public cerrar(): void {
-    if (this._estado !== EstadoIncidente.CONTROLADO && this._estado !== EstadoIncidente.LIQUIDADO) {
+    if (this._estado === EstadoIncidente.CERRADO) {
+      return;
+    }
+    if (this._estado === EstadoIncidente.PENDIENTE) {
       throw new EstadoInvalidoException(
-        `Regla de negocio: El incidente debe estar en estado 'CONTROLADO' o 'LIQUIDADO' antes de cerrarse formalmente. Estado actual: '${this._estado}'.`,
+        `Regla de negocio: No se puede cerrar un incidente que aún está pendiente de despacho.`,
       );
     }
     this._estado = EstadoIncidente.CERRADO;
