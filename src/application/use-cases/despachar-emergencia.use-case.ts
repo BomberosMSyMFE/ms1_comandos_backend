@@ -98,10 +98,15 @@ export class DespacharEmergenciaUseCase {
     });
 
     // 3. PASO 1 SAGA: Reservar Camión en MS-02 Flotas (Spring Boot / PostGIS)
+    const latitudIncidente = dto.latitud ?? incidente.ubicacion?.latitud ?? (incidente.ubicacion as any)?.lat ?? -17.7833;
+    const longitudIncidente = dto.longitud ?? incidente.ubicacion?.longitud ?? (incidente.ubicacion as any)?.lng ?? -63.1821;
+    const direccionIncidente = dto.direccion || dto.ubicacion || incidente.ubicacion?.direccion || (incidente.ubicacion as any)?.dir || incidente.descripcion || 'Santa Cruz de la Sierra';
+    const cuadranteIncidente = dto.cuadrante || incidente.ubicacion?.zonaCuadrante || (incidente.ubicacion as any)?.zona_cuadrante || 'CENTRO';
+
     this.logger?.log(
       'SAGA-ORCHESTRATOR',
       `[PASO_1_FLOTAS] Solicitando reserva de unidad a MS-02 Flotas... | Camión solicitado: ${dto.camionId || 'AUTO_ASIGNACION'}`,
-      { sagaId, incidenteId: incidente.id, camionId: dto.camionId },
+      { sagaId, incidenteId: incidente.id, camionId: dto.camionId, direccion: direccionIncidente, cuadrante: cuadranteIncidente },
     );
 
     const flotasRes = await this.flotasClient.reservarCamion(
@@ -109,9 +114,12 @@ export class DespacharEmergenciaUseCase {
       incidente.tipoIncidente,
       {
         camionId: dto.camionId,
-        latitud: incidente.ubicacion?.latitud,
-        longitud: incidente.ubicacion?.longitud,
-        litrosMinimos: incidente.severidad === 'CRITICA' ? 8000 : 3000,
+        latitud: latitudIncidente,
+        longitud: longitudIncidente,
+        direccion: direccionIncidente,
+        ubicacion: direccionIncidente,
+        cuadrante: cuadranteIncidente,
+        litrosMinimos: dto.camionId && dto.camionId !== 'AUTO_ASIGNACION' ? 0 : (incidente.severidad === 'CRITICA' ? 8000 : 3000),
       },
     );
 
@@ -131,6 +139,7 @@ export class DespacharEmergenciaUseCase {
         estadoSaga: 'FALLO_PASO_1',
         pasoActual: 'PASO_1_FLOTAS',
         detalleError: flotasRes.error || 'No hay camiones disponibles en el radio operativo.',
+        payloadRollback: { camionId: dto.camionId || 'AUTO_ASIGNACION' },
         idempotencyKey,
       });
 
@@ -272,6 +281,21 @@ export class DespacharEmergenciaUseCase {
       payloadRollback: { camionId: flotasRes.camionId, despachoId },
       idempotencyKey,
     });
+
+    // Notificar despacho táctico a MS-02 Flotas de forma asíncrona
+    if (this.flotasClient.notificarDespacho) {
+      this.flotasClient.notificarDespacho({
+        unidadId: flotasRes.camionId,
+        incidenteId: incidente.codigoRadial || incidente.id,
+        tipoIncidente: incidente.tipoIncidente,
+        ubicacion: direccionIncidente,
+        latitud: latitudIncidente,
+        longitud: longitudIncidente,
+        prioridad: incidente.severidad === 'CRITICA' ? 'ALTA' : 'MEDIA',
+      }).catch((err: any) => {
+        this.logger?.warn('SAGA-ORCHESTRATOR', `Fallo al notificar despacho a Flotas: ${err.message}`);
+      });
+    }
 
     // 6. Notificar por WebSockets a toda la Sala de Crisis en tiempo real
     const datosRespuesta = {
