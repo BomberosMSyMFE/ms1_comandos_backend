@@ -79,11 +79,30 @@ export class DynamoDbIncidenteRepository implements IIncidenteRepository {
     );
 
     if (scanResponse.Items && scanResponse.Items.length > 0) {
-      // Priorizar el siniestro activo (que no esté finalizado) si se encontró por asignación de unidad
-      const activo = scanResponse.Items.find(
+      // 1. Prioridad Absoluta: Coincidencia EXACTA por código radial o ID
+      const exacto = scanResponse.Items.find(
+        (i) =>
+          i.codigo_radial === idTrim ||
+          i.codigo_radial === idUpper ||
+          i.incidente_id === idTrim ||
+          i.incidente_id === idUpper,
+      );
+      if (exacto) return this.mapToDomain(exacto);
+
+      // 2. Si se buscó por camión, priorizar el siniestro activo en combate o despacho más reciente
+      const activos = scanResponse.Items.filter(
         (i) => i.estado !== EstadoIncidente.CERRADO && i.estado !== EstadoIncidente.LIQUIDADO,
       );
-      return this.mapToDomain(activo || scanResponse.Items[0]);
+      if (activos.length > 0) {
+        activos.sort(
+          (a, b) =>
+            new Date(b.updated_at || b.created_at || 0).getTime() -
+            new Date(a.updated_at || a.created_at || 0).getTime(),
+        );
+        return this.mapToDomain(activos[0]);
+      }
+
+      return this.mapToDomain(scanResponse.Items[0]);
     }
 
     return null;
